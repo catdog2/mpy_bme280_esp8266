@@ -5,8 +5,7 @@
 # below.
 #
 # Those libraries were written for the Raspberry Pi. This modification is
-# intended for the MicroPython and WiPy boards.
-#
+# intended for the MicroPython and esp8266 boards.
 #
 # Copyright (c) 2014 Adafruit Industries
 # Author: Tony DiCola
@@ -35,138 +34,8 @@
 # THE SOFTWARE.
 
 import time
-
-
-# BME280 default address.
-BME280_I2CADDR = 0x76
-
-# Operating Modes
-BME280_OSAMPLE_1 = 1
-BME280_OSAMPLE_2 = 2
-BME280_OSAMPLE_4 = 3
-BME280_OSAMPLE_8 = 4
-BME280_OSAMPLE_16 = 5
-
-# BME280 Registers
-
-BME280_REGISTER_DIG_T1 = 0x88  # Trimming parameter registers
-BME280_REGISTER_DIG_T2 = 0x8A
-BME280_REGISTER_DIG_T3 = 0x8C
-
-BME280_REGISTER_DIG_P1 = 0x8E
-BME280_REGISTER_DIG_P2 = 0x90
-BME280_REGISTER_DIG_P3 = 0x92
-BME280_REGISTER_DIG_P4 = 0x94
-BME280_REGISTER_DIG_P5 = 0x96
-BME280_REGISTER_DIG_P6 = 0x98
-BME280_REGISTER_DIG_P7 = 0x9A
-BME280_REGISTER_DIG_P8 = 0x9C
-BME280_REGISTER_DIG_P9 = 0x9E
-
-BME280_REGISTER_DIG_H1 = 0xA1
-BME280_REGISTER_DIG_H2 = 0xE1
-BME280_REGISTER_DIG_H3 = 0xE3
-BME280_REGISTER_DIG_H4 = 0xE4
-BME280_REGISTER_DIG_H5 = 0xE5
-BME280_REGISTER_DIG_H6 = 0xE6
-BME280_REGISTER_DIG_H7 = 0xE7
-
-BME280_REGISTER_CHIPID = 0xD0
-BME280_REGISTER_VERSION = 0xD1
-BME280_REGISTER_SOFTRESET = 0xE0
-
-BME280_REGISTER_CONTROL_HUM = 0xF2
-BME280_REGISTER_CONTROL = 0xF4
-BME280_REGISTER_CONFIG = 0xF5
-BME280_REGISTER_PRESSURE_DATA = 0xF7
-BME280_REGISTER_TEMP_DATA = 0xFA
-BME280_REGISTER_HUMIDITY_DATA = 0xFD
-
-
-class Device:
-    """Class for communicating with an I2C device.
-
-    Allows reading and writing 8-bit, 16-bit, and byte array values to
-    registers on the device."""
-
-    def __init__(self, address, i2c):
-        """Create an instance of the I2C device at the specified address using
-        the specified I2C interface object."""
-        self._address = address
-        self._i2c = i2c
-
-    def writeRaw8(self, value):
-        """Write an 8-bit value on the bus (without register)."""
-        buf = bytearray(1)
-        buf[0] = value & 0xFF
-        self._i2c.writeto(self._address, buf)
-
-    def write8(self, register, value):
-        """Write an 8-bit value to the specified register."""
-        buf = bytearray(1)
-        buf[0] = value & 0xFF
-        self._i2c.writeto_mem(self._address, register, buf)
-
-    def write16(self, register, value):
-        """Write a 16-bit value to the specified register."""
-        value = value & 0xFFFF
-        self.i2c.writeto_mem(self._address, register, value)
-
-    def readRaw8(self):
-        """Read an 8-bit value on the bus (without register)."""
-        return int.from_bytes(self._i2c.readfrom(self._address, 1)) & 0xFF
-
-    def readU8(self, register):
-        """Read an unsigned byte from the specified register."""
-        return int.from_bytes(
-            self._i2c.readfrom_mem(self._address, register, 1)) & 0xFF
-
-    def readS8(self, register):
-        """Read a signed byte from the specified register."""
-        result = self.readU8(register)
-        if result > 127:
-            result -= 256
-        return result
-
-    def readU16(self, register, little_endian=True):
-        """Read an unsigned 16-bit value from the specified register, with the
-        specified endianness (default little endian, or least significant byte
-        first)."""
-        result = int.from_bytes(
-            self._i2c.readfrom_mem(self._address, register, 2)) & 0xFFFF
-        if not little_endian:
-            result = ((result << 8) & 0xFF00) + (result >> 8)
-        return result
-
-    def readS16(self, register, little_endian=True):
-        """Read a signed 16-bit value from the specified register, with the
-        specified endianness (default little endian, or least significant byte
-        first)."""
-        result = self.readU16(register, little_endian)
-        if result > 32767:
-            result -= 65536
-        return result
-
-    def readU16LE(self, register):
-        """Read an unsigned 16-bit value from the specified register, in little
-        endian byte order."""
-        return self.readU16(register, little_endian=True)
-
-    def readU16BE(self, register):
-        """Read an unsigned 16-bit value from the specified register, in big
-        endian byte order."""
-        return self.readU16(register, little_endian=False)
-
-    def readS16LE(self, register):
-        """Read a signed 16-bit value from the specified register, in little
-        endian byte order."""
-        return self.readS16(register, little_endian=True)
-
-    def readS16BE(self, register):
-        """Read a signed 16-bit value from the specified register, in big
-        endian byte order."""
-        return self.readS16(register, little_endian=False)
-
+from bme280_const import *
+from i2c_device import Device
 
 class BME280:
     def __init__(self, mode=BME280_OSAMPLE_1, address=BME280_I2CADDR, i2c=None,
