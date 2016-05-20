@@ -52,13 +52,8 @@ class BME280:
         if i2c is None:
             raise ValueError('An I2C object is required.')
         self._device = Device(address, i2c)
+
         # Load calibration values.
-        self._load_calibration()
-        self._device.write8(BME280_REGISTER_CONTROL, 0x3F)
-        self.t_fine = 0
-
-    def _load_calibration(self):
-
         self.dig_T1 = self._device.readU16LE(BME280_REGISTER_DIG_T1)
         self.dig_T2 = self._device.readS16LE(BME280_REGISTER_DIG_T2)
         self.dig_T3 = self._device.readS16LE(BME280_REGISTER_DIG_T3)
@@ -86,6 +81,10 @@ class BME280:
         h5 = (h5 << 24) >> 20
         self.dig_H5 = h5 | (
             self._device.readU8(BME280_REGISTER_DIG_H5) >> 4 & 0x0F)
+
+
+        self._device.write8(BME280_REGISTER_CONTROL, 0x3F)
+        self.t_fine = 0
 
     def read_raw_temp(self):
         """Reads the raw (uncompensated) temperature from the sensor."""
