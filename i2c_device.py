@@ -57,11 +57,6 @@ class Device:
         buf[0] = value & 0xFF
         self._i2c.writeto_mem(self._address, register, buf)
 
-    def write16(self, register, value):
-        """Write a 16-bit value to the specified register."""
-        value = value & 0xFFFF
-        self.i2c.writeto_mem(self._address, register, value)
-
     def readRaw8(self):
         """Read an 8-bit value on the bus (without register)."""
         return int.from_bytes(self._i2c.readfrom(self._address, 1)) & 0xFF
