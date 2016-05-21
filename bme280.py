@@ -146,7 +146,7 @@ class BME280:
         """
         self.read_raw_data(self._l3_resultarray)
         raw_temp, raw_press, raw_hum = self._l3_resultarray
-        #temperature
+        # temperature
         var1 = ((raw_temp >> 3) - (self.dig_T1 << 1)) * (self.dig_T2 >> 11)
         var2 = (((((raw_temp >> 4) - self.dig_T1) *
                   ((raw_temp >> 4) - self.dig_T1)) >> 12) * self.dig_T3) >> 14
@@ -170,7 +170,7 @@ class BME280:
             var2 = (self.dig_P8 * p) >> 19
             pressure = ((p + var1 + var2) >> 8) + (self.dig_P7 << 4)
 
-        #humidity
+        # humidity
         h = self.t_fine - 76800
         h = (((((raw_hum << 14) - (self.dig_H4 << 20) -
                 (self.dig_H5 * h)) + 16384)
