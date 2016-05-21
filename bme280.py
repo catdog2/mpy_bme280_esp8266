@@ -48,9 +48,11 @@ class BME280:
                 'BME280_ULTRALOWPOWER, BME280_STANDARD, BME280_HIGHRES, or '
                 'BME280_ULTRAHIGHRES'.format(mode))
         self._mode = mode
-        # Create I2C device.
+        self.address = address
         if i2c is None:
             raise ValueError('An I2C object is required.')
+        self.i2c = i2c
+        # Create I2C device.
         self._device = Device(address, i2c)
 
         # Load calibration values.
@@ -85,6 +87,37 @@ class BME280:
 
         self._device.write8(BME280_REGISTER_CONTROL, 0x3F)
         self.t_fine = 0
+
+    def read_raw_data(self):
+        """ Reads the raw (uncompensated) data from the sensor.
+
+            Returns:
+                tuple with temperature, pressure, humidity
+        """
+
+        meas = self._mode
+        self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL_HUM,
+                             bytearray([meas]))
+        meas = self._mode << 5 | self._mode << 2 | 1
+        self._device.write8(BME280_REGISTER_CONTROL, meas)
+        self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
+                             bytearray([meas]))
+
+        sleep_time = 1250 + 2300 * (1 << self._mode)
+        sleep_time = sleep_time + 2300 * (1 << self._mode) + 575
+        sleep_time = sleep_time + 2300 * (1 << self._mode) + 575
+        time.sleep_us(sleep_time)  # Wait the required time
+
+        # burst readout from 0xF7 to 0xFE, recommended by datasheet
+        readout = self.i2c.readfrom_mem(self.address, 0xF7, 8)
+        # pressure(0xF7): ((msb << 16) | (lsb << 8) | xlsb) >> 4
+        raw_press = ((readout[0] << 16) | (readout[1] << 8) | readout[2]) >> 4
+        # temperature(0xFA): ((msb << 16) | (lsb << 8) | xlsb) >> 4
+        raw_temp = ((readout[3] << 16) | (readout[4] << 8) | readout[5]) >> 4
+        # humidity(0xFD): (msb << 8) | lsb
+        raw_hum = (readout[6] << 8) | readout[7]
+
+        return (raw_temp, raw_press, raw_hum)
 
     def read_raw_temp(self):
         """Reads the raw (uncompensated) temperature from the sensor."""
