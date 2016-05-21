@@ -170,16 +170,15 @@ class BME280:
     def values(self):
         """ human readable values """
 
+        t, p, h = self.read_compensated_data()
 
-        t = self.read_temperature()
         ti = t // 100
         td = t - ti * 100
 
-        p = self.read_pressure() // 256
+        p = p // 256
         pi = p // 100
         pd = p - pi * 100
 
-        h = self.read_humidity()
         hi = h // 1024
         hd = h * 100 // 1024 - hi * 100
         return ("{}.{:02d}C".format(ti, td), "{}.{:02d}hPa".format(pi, pd),
