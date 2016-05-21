@@ -80,7 +80,7 @@ class BME280:
         e6_sign, = unpack_from("<b", dig_e1_e7, 5)
         self.dig_H5 = (e6_sign << 4) | (dig_e1_e7[4] >> 4)
 
-        self.dig_H6 = unpack_from("<b", dig_e1_e7, 6)
+        self.dig_H6, = unpack_from("<b", dig_e1_e7, 6)
 
 
         self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
