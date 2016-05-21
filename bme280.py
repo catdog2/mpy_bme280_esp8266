@@ -85,7 +85,8 @@ class BME280:
             self._device.readU8(BME280_REGISTER_DIG_H5) >> 4 & 0x0F)
 
 
-        self._device.write8(BME280_REGISTER_CONTROL, 0x3F)
+        self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
+                             bytearray([0x3F]))
         self.t_fine = 0
 
     def read_raw_data(self):
@@ -99,7 +100,6 @@ class BME280:
         self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL_HUM,
                              bytearray([meas]))
         meas = self._mode << 5 | self._mode << 2 | 1
-        self._device.write8(BME280_REGISTER_CONTROL, meas)
         self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
                              bytearray([meas]))
 

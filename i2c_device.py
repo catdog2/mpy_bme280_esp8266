@@ -45,18 +45,6 @@ class Device:
         self._address = address
         self._i2c = i2c
 
-    def writeRaw8(self, value):
-        """Write an 8-bit value on the bus (without register)."""
-        buf = bytearray(1)
-        buf[0] = value & 0xFF
-        self._i2c.writeto(self._address, buf)
-
-    def write8(self, register, value):
-        """Write an 8-bit value to the specified register."""
-        buf = bytearray(1)
-        buf[0] = value & 0xFF
-        self._i2c.writeto_mem(self._address, register, buf)
-
     def readRaw8(self):
         """Read an 8-bit value on the bus (without register)."""
         return int.from_bytes(self._i2c.readfrom(self._address, 1)) & 0xFF
