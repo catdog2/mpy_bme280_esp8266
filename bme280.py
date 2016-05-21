@@ -50,8 +50,13 @@ BME280_OSAMPLE_16 = 5
 BME280_REGISTER_CONTROL_HUM = 0xF2
 BME280_REGISTER_CONTROL = 0xF4
 
+
 class BME280:
-    def __init__(self, mode=BME280_OSAMPLE_1, address=BME280_I2CADDR, i2c=None,
+
+    def __init__(self,
+                 mode=BME280_OSAMPLE_1,
+                 address=BME280_I2CADDR,
+                 i2c=None,
                  **kwargs):
         # Check that mode is valid.
         if mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
@@ -83,7 +88,6 @@ class BME280:
 
         self.dig_H6 = unpack_from("<b", dig_e1_e7, 6)[0]
 
-
         self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
                              bytearray([0x3F]))
         self.t_fine = 0
@@ -91,7 +95,7 @@ class BME280:
         # temporary data holders which stay allocated
         self._l1_barray = bytearray(1)
         self._l8_barray = bytearray(8)
-        self._l3_resultarray = array("i", [0,0,0])
+        self._l3_resultarray = array("i", [0, 0, 0])
 
     def read_raw_data(self, result):
         """ Reads the raw (uncompensated) data from the sensor.
@@ -145,10 +149,8 @@ class BME280:
         raw_temp, raw_press, raw_hum = self._l3_resultarray
         #temperature
         var1 = ((raw_temp >> 3) - (self.dig_T1 << 1)) * (self.dig_T2 >> 11)
-        var2 = ((
-            (((raw_temp >> 4) - self.dig_T1) *
-            ((raw_temp >> 4) - self.dig_T1)) >> 12) *
-            self.dig_T3) >> 14
+        var2 = (((((raw_temp >> 4) - self.dig_T1) *
+                  ((raw_temp >> 4) - self.dig_T1)) >> 12) * self.dig_T3) >> 14
         self.t_fine = var1 + var2
         temp = (self.t_fine * 5 + 128) >> 8
 
@@ -171,10 +173,11 @@ class BME280:
 
         #humidity
         h = self.t_fine - 76800
-        h = (((((raw_hum << 14) - (self.dig_H4 << 20) - (self.dig_H5 * h)) +
-             16384) >> 15) * (((((((h * self.dig_H6) >> 10) * (((h *
-                              self.dig_H3) >> 11) + 32768)) >> 10) + 2097152) *
-                              self.dig_H2 + 8192) >> 14))
+        h = (((((raw_hum << 14) - (self.dig_H4 << 20) -
+                (self.dig_H5 * h)) + 16384)
+              >> 15) * (((((((h * self.dig_H6) >> 10) *
+                            (((h * self.dig_H3) >> 11) + 32768)) >> 10) +
+                          2097152) * self.dig_H2 + 8192) >> 14))
         h = h - (((((h >> 15) * (h >> 15)) >> 7) * self.dig_H1) >> 4)
         h = 0 if h < 0 else h
         h = 419430400 if h > 419430400 else h
@@ -186,7 +189,7 @@ class BME280:
             result[2] = humidity
             return result
 
-        return array("i",(temp, pressure, humidity))
+        return array("i", (temp, pressure, humidity))
 
     @property
     def values(self):
