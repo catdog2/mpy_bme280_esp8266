@@ -10,7 +10,7 @@ See the datasheet at https://www.adafruit.com/datasheets/BST-BME280_DS001-10.pdf
 
 ### Using the library ###
 
-Copy `bme280.py`, `bme280_const.py`, `i2c_device.py` onto the board (e.g. using webrepl_cli.py). Then:
+Copy `bme280.py` onto the board (e.g. using webrepl_cli.py). Then:
 
 ``` python
 import machine
