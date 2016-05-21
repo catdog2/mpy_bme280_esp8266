@@ -1,4 +1,4 @@
-# Author: Paul Cunnane 2016
+# Authors: Paul Cunnane 2016, Peter Dahlebrg 2016
 #
 # This module borrows heavily from the Adafruit BME280 Python library
 # and the Adafruit GPIO/I2C library. Original copyright notices are reproduced
