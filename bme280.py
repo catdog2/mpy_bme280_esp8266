@@ -35,6 +35,7 @@
 
 import time
 from ustruct import unpack, unpack_from
+from array import array
 
 # BME280 default address.
 BME280_I2CADDR = 0x76
@@ -87,19 +88,27 @@ class BME280:
                              bytearray([0x3F]))
         self.t_fine = 0
 
-    def read_raw_data(self):
+        # temporary data holders which stay allocated
+        self._l1_barray = bytearray(1)
+        self._l8_barray = bytearray(8)
+        self._l3_resultarray = array("i", [0,0,0])
+
+    def read_raw_data(self, result):
         """ Reads the raw (uncompensated) data from the sensor.
 
+            Args:
+                result: array of length 3 or alike where the result will be
+                stored, in temperature, pressure, humidity order
             Returns:
-                tuple with temperature, pressure, humidity
+                None
         """
 
-        meas = self._mode
+        self._l1_barray[0] = self._mode
         self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL_HUM,
-                             bytearray([meas]))
-        meas = self._mode << 5 | self._mode << 2 | 1
+                             self._l1_barray)
+        self._l1_barray[0] = self._mode << 5 | self._mode << 2 | 1
         self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
-                             bytearray([meas]))
+                             self._l1_barray)
 
         sleep_time = 1250 + 2300 * (1 << self._mode)
         sleep_time = sleep_time + 2300 * (1 << self._mode) + 575
@@ -107,7 +116,8 @@ class BME280:
         time.sleep_us(sleep_time)  # Wait the required time
 
         # burst readout from 0xF7 to 0xFE, recommended by datasheet
-        readout = self.i2c.readfrom_mem(self.address, 0xF7, 8)
+        self.i2c.readfrom_mem_into(self.address, 0xF7, self._l8_barray)
+        readout = self._l8_barray
         # pressure(0xF7): ((msb << 16) | (lsb << 8) | xlsb) >> 4
         raw_press = ((readout[0] << 16) | (readout[1] << 8) | readout[2]) >> 4
         # temperature(0xFA): ((msb << 16) | (lsb << 8) | xlsb) >> 4
@@ -115,16 +125,24 @@ class BME280:
         # humidity(0xFD): (msb << 8) | lsb
         raw_hum = (readout[6] << 8) | readout[7]
 
-        return (raw_temp, raw_press, raw_hum)
+        result[0] = raw_temp
+        result[1] = raw_press
+        result[2] = raw_hum
 
-    def read_compensated_data(self):
+    def read_compensated_data(self, result=None):
         """ Reads the data from the sensor and returns the compensated data.
 
-            Returns:
-                tuple with temperature, pressure, humidity
-        """
-        raw_temp, raw_press, raw_hum = self.read_raw_data()
+            Args:
+                result: array of length 3 or alike where the result will be
+                stored, in temperature, pressure, humidity order. You may use
+                this to read out the sensor without allocating heap memory
 
+            Returns:
+                array with temperature, pressure, humidity. Will be the one from
+                the result parameter if not None
+        """
+        self.read_raw_data(self._l3_resultarray)
+        raw_temp, raw_press, raw_hum = self._l3_resultarray
         #temperature
         var1 = ((raw_temp >> 3) - (self.dig_T1 << 1)) * (self.dig_T2 >> 11)
         var2 = ((
@@ -162,7 +180,13 @@ class BME280:
         h = 419430400 if h > 419430400 else h
         humidity = h >> 12
 
-        return (temp, pressure, humidity)
+        if result:
+            result[0] = temp
+            result[1] = pressure
+            result[2] = humidity
+            return result
+
+        return array("i",(temp, pressure, humidity))
 
     @property
     def values(self):
