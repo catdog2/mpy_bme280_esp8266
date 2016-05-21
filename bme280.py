@@ -119,53 +119,24 @@ class BME280:
 
         return (raw_temp, raw_press, raw_hum)
 
-    def read_raw_temp(self):
-        """Reads the raw (uncompensated) temperature from the sensor."""
-        meas = self._mode
-        self._device.write8(BME280_REGISTER_CONTROL_HUM, meas)
-        meas = self._mode << 5 | self._mode << 2 | 1
-        self._device.write8(BME280_REGISTER_CONTROL, meas)
-        sleep_time = 1250 + 2300 * (1 << self._mode)
-        sleep_time = sleep_time + 2300 * (1 << self._mode) + 575
-        sleep_time = sleep_time + 2300 * (1 << self._mode) + 575
-        time.sleep_us(sleep_time)  # Wait the required time
-        msb = self._device.readU8(BME280_REGISTER_TEMP_DATA)
-        lsb = self._device.readU8(BME280_REGISTER_TEMP_DATA + 1)
-        xlsb = self._device.readU8(BME280_REGISTER_TEMP_DATA + 2)
-        raw = ((msb << 16) | (lsb << 8) | xlsb) >> 4
-        return raw
+    def read_compensated_data(self):
+        """ Reads the data from the sensor and returns the compensated data.
 
-    def read_raw_pressure(self):
-        """Reads the raw (uncompensated) pressure level from the sensor."""
-        """Assumes that the temperature has already been read """
-        """i.e. that enough delay has been provided"""
-        msb = self._device.readU8(BME280_REGISTER_PRESSURE_DATA)
-        lsb = self._device.readU8(BME280_REGISTER_PRESSURE_DATA + 1)
-        xlsb = self._device.readU8(BME280_REGISTER_PRESSURE_DATA + 2)
-        raw = ((msb << 16) | (lsb << 8) | xlsb) >> 4
-        return raw
+            Returns:
+                tuple with temperature, pressure, humidity
+        """
+        raw_temp, raw_press, raw_hum = self.read_raw_data()
 
-    def read_raw_humidity(self):
-        """Assumes that the temperature has already been read """
-        """i.e. that enough delay has been provided"""
-        msb = self._device.readU8(BME280_REGISTER_HUMIDITY_DATA)
-        lsb = self._device.readU8(BME280_REGISTER_HUMIDITY_DATA + 1)
-        raw = (msb << 8) | lsb
-        return raw
-
-    def read_temperature(self):
-        """Get the compensated temperature in 0.01 of a degree celsius."""
-        adc = self.read_raw_temp()
-        var1 = ((adc >> 3) - (self.dig_T1 << 1)) * (self.dig_T2 >> 11)
+        #temperature
+        var1 = ((raw_temp >> 3) - (self.dig_T1 << 1)) * (self.dig_T2 >> 11)
         var2 = ((
-            (((adc >> 4) - self.dig_T1) * ((adc >> 4) - self.dig_T1)) >> 12) *
+            (((raw_temp >> 4) - self.dig_T1) *
+            ((raw_temp >> 4) - self.dig_T1)) >> 12) *
             self.dig_T3) >> 14
         self.t_fine = var1 + var2
-        return (self.t_fine * 5 + 128) >> 8
+        temp = (self.t_fine * 5 + 128) >> 8
 
-    def read_pressure(self):
-        """Gets the compensated pressure in Pascals."""
-        adc = self.read_raw_pressure()
+        # pressure
         var1 = self.t_fine - 128000
         var2 = var1 * var1 * self.dig_P6
         var2 = var2 + ((var1 * self.dig_P5) << 17)
@@ -174,29 +145,31 @@ class BME280:
                 ((var1 * self.dig_P2) >> 12))
         var1 = (((1 << 47) + var1) * self.dig_P1) >> 33
         if var1 == 0:
-            return 0
-        p = 1048576 - adc
-        p = (((p << 31) - var2) * 3125) // var1
-        var1 = (self.dig_P9 * (p >> 13) * (p >> 13)) >> 25
-        var2 = (self.dig_P8 * p) >> 19
-        return ((p + var1 + var2) >> 8) + (self.dig_P7 << 4)
+            pressure = 0
+        else:
+            p = 1048576 - raw_press
+            p = (((p << 31) - var2) * 3125) // var1
+            var1 = (self.dig_P9 * (p >> 13) * (p >> 13)) >> 25
+            var2 = (self.dig_P8 * p) >> 19
+            pressure = ((p + var1 + var2) >> 8) + (self.dig_P7 << 4)
 
-    def read_humidity(self):
-        adc = self.read_raw_humidity()
-        # print 'Raw humidity = {0:d}'.format (adc)
+        #humidity
         h = self.t_fine - 76800
-        h = (((((adc << 14) - (self.dig_H4 << 20) - (self.dig_H5 * h)) +
+        h = (((((raw_hum << 14) - (self.dig_H4 << 20) - (self.dig_H5 * h)) +
              16384) >> 15) * (((((((h * self.dig_H6) >> 10) * (((h *
                               self.dig_H3) >> 11) + 32768)) >> 10) + 2097152) *
                               self.dig_H2 + 8192) >> 14))
         h = h - (((((h >> 15) * (h >> 15)) >> 7) * self.dig_H1) >> 4)
         h = 0 if h < 0 else h
         h = 419430400 if h > 419430400 else h
-        return h >> 12
+        humidity = h >> 12
+
+        return (temp, pressure, humidity)
 
     @property
     def values(self):
         """ human readable values """
+
 
         t = self.read_temperature()
         ti = t // 100
