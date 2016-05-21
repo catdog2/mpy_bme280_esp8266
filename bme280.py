@@ -1,8 +1,7 @@
 # Authors: Paul Cunnane 2016, Peter Dahlebrg 2016
 #
-# This module borrows heavily from the Adafruit BME280 Python library
-# and the Adafruit GPIO/I2C library. Original copyright notices are reproduced
-# below.
+# This module borrows from the Adafruit BME280 Python library. Original
+# Copyright notices are reproduced below.
 #
 # Those libraries were written for the Raspberry Pi. This modification is
 # intended for the MicroPython and esp8266 boards.
