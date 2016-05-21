@@ -16,7 +16,7 @@ Copy `bme280.py`, `bme280_const.py`, `i2c_device.py` onto the board (e.g. using 
 import machine
 import bme280
 
-i2c = machine.I2C(scl=Pin(5), sda=Pin(4))
+i2c = machine.I2C(scl=machine.Pin(5), sda=machine.Pin(4))
 bme = bme280.BME280(i2c=i2c)
 
 print(bme.values)
