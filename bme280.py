@@ -35,7 +35,7 @@
 
 import time
 from bme280_const import *
-from i2c_device import Device
+from ustruct import unpack, unpack_from
 
 class BME280:
     def __init__(self, mode=BME280_OSAMPLE_1, address=BME280_I2CADDR, i2c=None,
@@ -52,37 +52,23 @@ class BME280:
         if i2c is None:
             raise ValueError('An I2C object is required.')
         self.i2c = i2c
-        # Create I2C device.
-        self._device = Device(address, i2c)
 
-        # Load calibration values.
-        self.dig_T1 = self._device.readU16LE(BME280_REGISTER_DIG_T1)
-        self.dig_T2 = self._device.readS16LE(BME280_REGISTER_DIG_T2)
-        self.dig_T3 = self._device.readS16LE(BME280_REGISTER_DIG_T3)
+        # load calibration data
+        dig_88_a1 = self.i2c.readfrom_mem(self.address, 0x88, 26)
+        dig_e1_e7 = self.i2c.readfrom_mem(self.address, 0xE1, 7)
+        self.dig_T1, self.dig_T2, self.dig_T3, self.dig_P1, \
+            self.dig_P2, self.dig_P3, self.dig_P4, self.dig_P5, \
+            self.dig_P6, self.dig_P7, self.dig_P8, self.dig_P9, \
+            self.dig_H1 = unpack("<HhhHhhhhhhhhB", dig_88_a1)
 
-        self.dig_P1 = self._device.readU16LE(BME280_REGISTER_DIG_P1)
-        self.dig_P2 = self._device.readS16LE(BME280_REGISTER_DIG_P2)
-        self.dig_P3 = self._device.readS16LE(BME280_REGISTER_DIG_P3)
-        self.dig_P4 = self._device.readS16LE(BME280_REGISTER_DIG_P4)
-        self.dig_P5 = self._device.readS16LE(BME280_REGISTER_DIG_P5)
-        self.dig_P6 = self._device.readS16LE(BME280_REGISTER_DIG_P6)
-        self.dig_P7 = self._device.readS16LE(BME280_REGISTER_DIG_P7)
-        self.dig_P8 = self._device.readS16LE(BME280_REGISTER_DIG_P8)
-        self.dig_P9 = self._device.readS16LE(BME280_REGISTER_DIG_P9)
+        self.dig_H2, self.dig_H3 = unpack("<hB", dig_e1_e7)
+        e4_sign, = unpack_from("<b", dig_e1_e7, 3)
+        self.dig_H4 = (e4_sign << 4) | (dig_e1_e7[4] & 0xF)
 
-        self.dig_H1 = self._device.readU8(BME280_REGISTER_DIG_H1)
-        self.dig_H2 = self._device.readS16LE(BME280_REGISTER_DIG_H2)
-        self.dig_H3 = self._device.readU8(BME280_REGISTER_DIG_H3)
-        self.dig_H6 = self._device.readS8(BME280_REGISTER_DIG_H7)
+        e6_sign, = unpack_from("<b", dig_e1_e7, 5)
+        self.dig_H5 = (e6_sign << 4) | (dig_e1_e7[4] >> 4)
 
-        h4 = self._device.readS8(BME280_REGISTER_DIG_H4)
-        h4 = (h4 << 24) >> 20
-        self.dig_H4 = h4 | (self._device.readU8(BME280_REGISTER_DIG_H5) & 0x0F)
-
-        h5 = self._device.readS8(BME280_REGISTER_DIG_H6)
-        h5 = (h5 << 24) >> 20
-        self.dig_H5 = h5 | (
-            self._device.readU8(BME280_REGISTER_DIG_H5) >> 4 & 0x0F)
+        self.dig_H6 = unpack_from("<b", dig_e1_e7, 6)
 
 
         self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
