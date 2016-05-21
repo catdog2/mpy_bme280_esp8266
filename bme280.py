@@ -34,8 +34,20 @@
 # THE SOFTWARE.
 
 import time
-from bme280_const import *
 from ustruct import unpack, unpack_from
+
+# BME280 default address.
+BME280_I2CADDR = 0x76
+
+# Operating Modes
+BME280_OSAMPLE_1 = 1
+BME280_OSAMPLE_2 = 2
+BME280_OSAMPLE_4 = 3
+BME280_OSAMPLE_8 = 4
+BME280_OSAMPLE_16 = 5
+
+BME280_REGISTER_CONTROL_HUM = 0xF2
+BME280_REGISTER_CONTROL = 0xF4
 
 class BME280:
     def __init__(self, mode=BME280_OSAMPLE_1, address=BME280_I2CADDR, i2c=None,
