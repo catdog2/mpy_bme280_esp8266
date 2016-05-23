@@ -76,7 +76,7 @@ class BME280:
         self.dig_T1, self.dig_T2, self.dig_T3, self.dig_P1, \
             self.dig_P2, self.dig_P3, self.dig_P4, self.dig_P5, \
             self.dig_P6, self.dig_P7, self.dig_P8, self.dig_P9, \
-            self.dig_H1 = unpack("<HhhHhhhhhhhhB", dig_88_a1)
+            _, self.dig_H1 = unpack("<HhhHhhhhhhhhBB", dig_88_a1)
 
         self.dig_H2, self.dig_H3 = unpack("<hB", dig_e1_e7)
         e4_sign = unpack_from("<b", dig_e1_e7, 3)[0]
