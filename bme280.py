@@ -159,7 +159,7 @@ class BME280:
         var2 = var2 + ((var1 * self.dig_P5) << 17)
         var2 = var2 + (self.dig_P4 << 35)
         var1 = (((var1 * var1 * self.dig_P3) >> 8) +
-                ((var1 * self.dig_P2) >> 12))
+                ((var1 * self.dig_P2) << 12))
         var1 = (((1 << 47) + var1) * self.dig_P1) >> 33
         if var1 == 0:
             pressure = 0
