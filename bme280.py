@@ -196,14 +196,11 @@ class BME280:
 
         t, p, h = self.read_compensated_data()
 
-        ti = t // 100
-        td = t - ti * 100
-
         p = p // 256
         pi = p // 100
         pd = p - pi * 100
 
         hi = h // 1024
         hd = h * 100 // 1024 - hi * 100
-        return ("{}.{:02d}C".format(ti, td), "{}.{:02d}hPa".format(pi, pd),
+        return ("{}C".format(t / 100), "{}.{:02d}hPa".format(pi, pd),
                 "{}.{:02d}%".format(hi, hd))
