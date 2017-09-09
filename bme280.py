@@ -53,9 +53,9 @@ BME280_REGISTER_CONTROL = 0xF4
 class BME280:
 
     def __init__(self,
+                 i2c=None,
                  mode=BME280_OSAMPLE_1,
                  address=BME280_I2CADDR,
-                 i2c=None,
                  **kwargs):
         # Check that mode is valid.
         if mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
