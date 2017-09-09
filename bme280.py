@@ -96,6 +96,10 @@ class BME280:
         self._l8_barray = bytearray(8)
         self._l3_resultarray = array("i", [0, 0, 0])
 
+        # sea level pressure in millibar, because it's
+        # easy to get from your local airport METAR
+        self._slp = 1013.25
+
     def read_raw_data(self, result):
         """ Reads the raw (uncompensated) data from the sensor.
 
@@ -199,7 +203,21 @@ class BME280:
         t /= 100
         p /= 256
         h /= 1024
+        sl = 100 * self._slp
+        a = 44330 * (1 - (p/sl)**0.190295)
 
         return ("{}C".format(t),
-                "{:.02f}hPa".format(p),
-                "{:.02f}%".format(h))
+                "{:.02f}Pa".format(p),
+                "{:.02f}%".format(h),
+                "{:.02f}m".format(a),
+               )
+
+    @property
+    def sea_level_millibars(self):
+        return self._slp
+
+    @sea_level_millibars.setter
+    def sea_level_millibars(self, value):
+        if value <= 0:
+            raise ValueError("sea_level_pressure must be greater than 0mb")
+        self._slp = value
