@@ -195,19 +195,22 @@ class BME280:
         return array("i", (temp, pressure, humidity))
 
     @property
-    def values(self):
-        """ human readable values """
-
+    def scaledvalues(self):
+        """Scale raw sensor values to real world units"""
         t, p, h = self.read_compensated_data()
 
         t /= 100
-        p /= 256
+        p /= 25600
         h /= 1024
-        sl = 100 * self._slp
-        a = 44330 * (1 - (p/sl)**0.190295)
+        a = 44330 * (1 - (p/self._slp)**0.190295)
+        return t, p, h, a
 
+    @property
+    def values(self):
+        """Print human readable values"""
+        t, p, h, a = self.scaledvalues
         return ("{}C".format(t),
-                "{:.02f}Pa".format(p),
+                "{:.02f}hPa".format(p),
                 "{:.02f}%".format(h),
                 "{:.02f}m".format(a),
                )
