@@ -53,9 +53,9 @@ BME280_REGISTER_CONTROL = 0xF4
 class BME280:
 
     def __init__(self,
+                 i2c=None,
                  mode=BME280_OSAMPLE_1,
                  address=BME280_I2CADDR,
-                 i2c=None,
                  **kwargs):
         # Check that mode is valid.
         if mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
@@ -95,6 +95,10 @@ class BME280:
         self._l1_barray = bytearray(1)
         self._l8_barray = bytearray(8)
         self._l3_resultarray = array("i", [0, 0, 0])
+
+        # sea level pressure in millibar, because it's
+        # easy to get from your local airport METAR
+        self._slp = 1013.25
 
     def read_raw_data(self, result):
         """ Reads the raw (uncompensated) data from the sensor.
@@ -191,16 +195,32 @@ class BME280:
         return array("i", (temp, pressure, humidity))
 
     @property
-    def values(self):
-        """ human readable values """
-
+    def scaledvalues(self):
+        """Scale raw sensor values to real world units"""
         t, p, h = self.read_compensated_data()
 
-        p = p // 256
-        pi = p // 100
-        pd = p - pi * 100
+        t /= 100
+        p /= 25600
+        h /= 1024
+        a = 44330 * (1 - (p/self._slp)**0.190295)
+        return t, p, h, a
 
-        hi = h // 1024
-        hd = h * 100 // 1024 - hi * 100
-        return ("{}C".format(t / 100), "{}.{:02d}hPa".format(pi, pd),
-                "{}.{:02d}%".format(hi, hd))
+    @property
+    def values(self):
+        """Print human readable values"""
+        t, p, h, a = self.scaledvalues
+        return ("{}C".format(t),
+                "{:.02f}hPa".format(p),
+                "{:.02f}%".format(h),
+                "{:.02f}m".format(a),
+               )
+
+    @property
+    def sea_level_millibars(self):
+        return self._slp
+
+    @sea_level_millibars.setter
+    def sea_level_millibars(self, value):
+        if value <= 0:
+            raise ValueError("sea_level_pressure must be greater than 0mb")
+        self._slp = value
