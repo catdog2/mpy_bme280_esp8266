@@ -35,19 +35,20 @@
 import time
 from ustruct import unpack, unpack_from
 from array import array
+from micropython import const
 
 # BME280 default address.
-BME280_I2CADDR = 0x76
+BME280_I2CADDR = const(0x76)
 
 # Operating Modes
-BME280_OSAMPLE_1 = 1
-BME280_OSAMPLE_2 = 2
-BME280_OSAMPLE_4 = 3
-BME280_OSAMPLE_8 = 4
-BME280_OSAMPLE_16 = 5
+BME280_OSAMPLE_1 = const(1)
+BME280_OSAMPLE_2 = const(2)
+BME280_OSAMPLE_4 = const(3)
+BME280_OSAMPLE_8 = const(4)
+BME280_OSAMPLE_16 = const(5)
 
-BME280_REGISTER_CONTROL_HUM = 0xF2
-BME280_REGISTER_CONTROL = 0xF4
+BME280_REGISTER_CONTROL_HUM = const(0xF2)
+BME280_REGISTER_CONTROL = const(0xF4)
 
 
 class BME280:
@@ -55,15 +56,13 @@ class BME280:
     def __init__(self,
                  mode=BME280_OSAMPLE_1,
                  address=BME280_I2CADDR,
-                 i2c=None,
-                 **kwargs):
+                 i2c=None):
         # Check that mode is valid.
-        if mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
-                        BME280_OSAMPLE_8, BME280_OSAMPLE_16]:
+        if mode not in range(1,6):
             raise ValueError(
                 'Unexpected mode value {0}. Set mode to one of '
-                'BME280_ULTRALOWPOWER, BME280_STANDARD, BME280_HIGHRES, or '
-                'BME280_ULTRAHIGHRES'.format(mode))
+                'BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4, '
+                'BME280_OSAMPLE_8 or BME280_OSAMPLE_16'.format(mode))
         self._mode = mode
         self.address = address
         if i2c is None:
