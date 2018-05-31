@@ -147,7 +147,7 @@ class BME280:
         self.read_raw_data(self._l3_resultarray)
         raw_temp, raw_press, raw_hum = self._l3_resultarray
         # temperature
-        var1 = ((raw_temp >> 3) - (self.dig_T1 << 1)) * (self.dig_T2 >> 11)
+        var1 = (((raw_temp >> 3) - (self.dig_T1 << 1)) * self.dig_T2) >> 11
         var2 = (((((raw_temp >> 4) - self.dig_T1) *
                   ((raw_temp >> 4) - self.dig_T1)) >> 12) * self.dig_T3) >> 14
         self.t_fine = var1 + var2
