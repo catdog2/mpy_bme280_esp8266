@@ -1,3 +1,10 @@
+# This fork
+
+I created this to raise a [PR](https://github.com/catdog2/mpy_bme280_esp8266/pull/9)
+against the master. Unfortunately the master seems to have been abandoned. My PR and
+other apparently good ones have been ignored. Please read the PR's epecially
+[this bugfix](https://github.com/catdog2/mpy_bme280_esp8266/pull/11).
+
 # README #
 
 This is a driver for the Bosch BME280 temperature/pressure/humidity sensor, for use with MicroPython on ESP8266 boards. It is also compatible with the BMP280 which provides the same interface but temperature + pressure only.
