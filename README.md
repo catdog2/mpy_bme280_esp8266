@@ -1,3 +1,10 @@
+# This fork
+
+I created this to raise a [PR](https://github.com/catdog2/mpy_bme280_esp8266/pull/9)
+against the master. Unfortunately the master seems to have been abandoned. My PR and
+other apparently good ones have been ignored. Please read the PR's epecially
+[this bugfix](https://github.com/catdog2/mpy_bme280_esp8266/pull/11).
+
 # README #
 
 This is a driver for the Bosch BME280 temperature/pressure/humidity sensor, for use with MicroPython on ESP8266 boards. It is also compatible with the BMP280 which provides the same interface but temperature + pressure only.
@@ -29,3 +36,7 @@ The `values` property is a convenience function that provides a tuple of human-r
 * `temperature`:  the temperature in hundredths of a degree celsius. For example, the value 2534  indicates a temperature of 25.34 degrees.
 * `pressure`: the atmospheric pressure. This 32-bit value consists of 24 bits indicating the integer value, and 8 bits indicating the fractional value. To get a value in Pascals, divide the return value by 256. For example, a value of 24674867 indicates 96386.2Pa, or 963.862hPa.
 * `humidity`: the relative humidity. This 32-bit value consists of 22 bits indicating the integer value, and 10 bits indicating the fractional value. To get a value in %RH, divide the return value by 1024. For example, a value of 47445 indicates 46.333%RH.
+
+The BME280 constructor takes an optional `address` argument. BME280 devices are
+on I2C addresses 0x76 or 0x77. If you do not provide an address the driver will
+scan for a device and use it, raising an exception if no device is found.
