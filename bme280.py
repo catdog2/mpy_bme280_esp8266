@@ -35,44 +35,49 @@
 import time
 from ustruct import unpack, unpack_from
 from array import array
+from micropython import const
 
-# BME280 default address.
-BME280_I2CADDR = 0x76
+# BME280 default addresses.
+BME280_I2CADDRS = (0x76, 0x77)
 
 # Operating Modes
-BME280_OSAMPLE_1 = 1
-BME280_OSAMPLE_2 = 2
-BME280_OSAMPLE_4 = 3
-BME280_OSAMPLE_8 = 4
-BME280_OSAMPLE_16 = 5
+BME280_OSAMPLE_1 = const(1)
+BME280_OSAMPLE_2 = const(2)
+BME280_OSAMPLE_4 = const(3)
+BME280_OSAMPLE_8 = const(4)
+BME280_OSAMPLE_16 = const(5)
 
-BME280_REGISTER_CONTROL_HUM = 0xF2
-BME280_REGISTER_CONTROL = 0xF4
+BME280_REGISTER_CONTROL_HUM = const(0xF2)
+BME280_REGISTER_CONTROL = const(0xF4)
 
 
 class BME280:
 
     def __init__(self,
                  mode=BME280_OSAMPLE_1,
-                 address=BME280_I2CADDR,
-                 i2c=None,
-                 **kwargs):
+                 address=None,
+                 i2c=None):
         # Check that mode is valid.
-        if mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
-                        BME280_OSAMPLE_8, BME280_OSAMPLE_16]:
+        if mode < BME280_OSAMPLE_1 or mode > BME280_OSAMPLE_16:
             raise ValueError(
                 'Unexpected mode value {0}. Set mode to one of '
-                'BME280_ULTRALOWPOWER, BME280_STANDARD, BME280_HIGHRES, or '
-                'BME280_ULTRAHIGHRES'.format(mode))
+                'BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4, '
+                'BME280_OSAMPLE_8 or BME280_OSAMPLE_16'.format(mode))
         self._mode = mode
-        self.address = address
         if i2c is None:
             raise ValueError('An I2C object is required.')
+        if address is not None:
+            self.address = address
+        else:
+            addr = [a for a in i2c.scan() if a in BME280_I2CADDRS]
+            if len(addr) == 0:
+                raise RuntimeError('No BME280 found.')
+            self.address = addr[0]  # 1st device found
         self.i2c = i2c
 
         # load calibration data
-        dig_88_a1 = self.i2c.readfrom_mem(self.address, 0x88, 26)
-        dig_e1_e7 = self.i2c.readfrom_mem(self.address, 0xE1, 7)
+        dig_88_a1 = i2c.readfrom_mem(self.address, 0x88, 26)
+        dig_e1_e7 = i2c.readfrom_mem(self.address, 0xE1, 7)
         self.dig_T1, self.dig_T2, self.dig_T3, self.dig_P1, \
             self.dig_P2, self.dig_P3, self.dig_P4, self.dig_P5, \
             self.dig_P6, self.dig_P7, self.dig_P8, self.dig_P9, \
@@ -87,7 +92,7 @@ class BME280:
 
         self.dig_H6 = unpack_from("<b", dig_e1_e7, 6)[0]
 
-        self.i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
+        i2c.writeto_mem(self.address, BME280_REGISTER_CONTROL,
                              bytearray([0x3F]))
         self.t_fine = 0
 
@@ -147,7 +152,7 @@ class BME280:
         self.read_raw_data(self._l3_resultarray)
         raw_temp, raw_press, raw_hum = self._l3_resultarray
         # temperature
-        var1 = ((raw_temp >> 3) - (self.dig_T1 << 1)) * (self.dig_T2 >> 11)
+        var1 = (((raw_temp >> 3) - (self.dig_T1 << 1)) * self.dig_T2) >> 11
         var2 = (((((raw_temp >> 4) - self.dig_T1) *
                   ((raw_temp >> 4) - self.dig_T1)) >> 12) * self.dig_T3) >> 14
         self.t_fine = var1 + var2
